@@ -1,14 +1,10 @@
-import socket  # noqa: F401
+from .configs import settings
+from .server import HttpServer
 
 
 def main():
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
-
-    # Uncomment this to pass the first stage
-
-    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    server_socket.accept() # wait for client
+    with HttpServer(settings.host, settings.port) as server:
+        server.run()
 
 
 if __name__ == "__main__":
