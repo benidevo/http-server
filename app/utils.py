@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def parse_headers(header_lines: list) -> dict:
     """
     Parse HTTP headers from a list of header lines into a dictionary.
@@ -23,6 +24,7 @@ def parse_headers(header_lines: list) -> dict:
             logger.warning(f"Invalid header line: {header}, ignoring header")
 
     return headers
+
 
 def format_headers(headers: dict) -> str:
     """

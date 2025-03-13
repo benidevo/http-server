@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
 
 
-def setup_logging():
+def setup_logging() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -14,13 +13,13 @@ def setup_logging():
 class Settings:
     host: str
     port: int
-    allowed_origins: Optional[List[str]] = None
-    max_connections: Optional[int] = None
-    max_request_size: Optional[int] = None
-    max_response_size: Optional[int] = None
-    max_request_timeout: Optional[int] = None
-    max_response_timeout: Optional[int] = None
-    max_keep_alive_requests: Optional[int] = None
+    allowed_origins: list[str] | None = None
+    max_connections: int | None = None
+    max_request_size: int | None = None
+    max_response_size: int | None = None
+    max_request_timeout: int | None = None
+    max_response_timeout: int | None = None
+    max_keep_alive_requests: int | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         setup_logging()

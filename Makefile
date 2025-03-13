@@ -1,8 +1,17 @@
 start:
-	./your_program.sh
+	sh run.sh
 
 test:
 	codecrafters test
 
-lint:
-	isort ./app && black ./app
+format:
+	pipenv run isort ./app
+	pipenv run black ./app
+
+lint: format
+	pipenv run mypy ./app
+
+install-dev:
+	pipenv install --dev
+
+.PHONY: start test format lint install-dev

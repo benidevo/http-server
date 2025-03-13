@@ -15,4 +15,3 @@ class Status(StrEnum):
     NOT_IMPLEMENTED = "501 Not Implemented"
     BAD_REQUEST = "400 Bad Request"
     FORBIDDEN = "403 Forbidden"
-

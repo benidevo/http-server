@@ -2,7 +2,7 @@ import logging
 import socket
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, Optional
 
 from app.request import Request
 from app.response import Response
@@ -28,11 +28,11 @@ class Server(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __exit__(self):
+    def __exit__(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def run(self):
+    def run(self) -> None:
         """
         Starts the server and begins accepting connections.
 
@@ -44,7 +44,7 @@ class Server(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def stop(self):
+    def stop(self) -> None:
         """
         Stops the server and closes any open connections.
 
@@ -55,7 +55,7 @@ class Server(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def handle_request(self):
+    def handle_request(self) -> None:
         """
         Handles a single incoming request.
 
@@ -76,25 +76,21 @@ class HttpConnection:
     connection: socket.socket
     address: str
 
-    def send_response(self, response: str) -> None:
-        self.connection.sendall(response.encode("utf-8"))
+    def send_response(self, response_str: str) -> None:
+        self.connection.sendall(response_str.encode("utf-8"))
         self.connection.close()
 
 
-
 class HttpServer(Server):
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int) -> None:
         self.host: str = host
         self.port: int = port
-        self.connections: Optional[List[HttpConnection]] = None
-        self.socket: Optional[socket.socket] = None
+        self.connections: list[HttpConnection] = []
+        self.socket = socket.create_server((self.host, self.port), reuse_port=True)
         self.router = Router()
 
-    def run(self):
+    def run(self) -> None:
         log.info(f"Starting server on {self.host}:{self.port}")
-        if not self.socket:
-            self.socket = socket.create_server((self.host, self.port), reuse_port=True)
-            self.connections = []
 
         while True:
             try:
@@ -105,17 +101,17 @@ class HttpServer(Server):
             except Exception as e:
                 log.error(f"Error handling request: {e}")
 
-    def handle_request(self):
+    def handle_request(self) -> None:
         connection, address = self.socket.accept()
         log.info(f"Connection from {address}")
 
         http_connection = HttpConnection(connection=connection, address=address)
         self.connections.append(http_connection)
 
-        request = connection.recv(1024).decode("utf-8")
-        log.info(f"Received request: {request}")
+        request_str = connection.recv(1024).decode("utf-8")
+        log.info(f"Received request: {request_str}")
 
-        request = Request.deserialize(request)
+        request: Request = Request.deserialize(request_str)
         if request.path not in self.router.routes:
             response = Response(
                 status=Status.NOT_FOUND,
@@ -128,16 +124,15 @@ class HttpServer(Server):
         response = handler(request)
         http_connection.send_response(response.serialize())
 
-
-    def __enter__(self):
+    def __enter__(self) -> "HttpServer":
         self.run()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
         self.stop()
         log.info("Server stopped")
 
-    def stop(self):
+    def stop(self) -> None:
         for connection in self.connections:
             connection.connection.close()
         self.socket.close()

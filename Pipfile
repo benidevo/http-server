@@ -1,10 +1,4 @@
 #!/bin/sh
-#
-# DON'T EDIT THIS!
-#
-# CodeCrafters uses this file to test your code. Don't make any changes here!
-#
-# DON'T EDIT THIS!
 
 [[source]]
 url = "https://pypi.org/simple"
@@ -16,6 +10,9 @@ pyparsing = "~=3.0"
 lark = "~=1.1"
 
 [dev-packages]
+black = "~=23.11"
+isort = "~=5.12"
+mypy = "~=1.7"
 
 [requires]
 python_version = "3"

@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 
 from app.status import Status
@@ -15,6 +14,3 @@ class Response:
     def serialize(self) -> str:
         headers = format_headers(self.headers)
         return f"{self.version} {self.status}\r\n{headers}\r\n{self.body}"
-
-
-

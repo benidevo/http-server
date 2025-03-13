@@ -2,7 +2,7 @@ from app.configs import settings
 from app.server import HttpServer
 
 
-def main():
+def main() -> None:
     with HttpServer(settings.host, settings.port) as server:
         server.run()
 
