@@ -2,26 +2,25 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def parse_headers(headers_str: str) -> dict:
+def parse_headers(header_lines: list) -> dict:
     """
-    Parse HTTP headers from a string into a dictionary.
+    Parse HTTP headers from a list of header lines into a dictionary.
 
     Args:
-        headers_str (str): A string containing HTTP headers in the format 'Key: Value'
-                          separated by CRLF (\r\n).
+        header_lines (list): A list of strings, each containing a header line in the format 'Key: Value'.
 
     Returns:
         dict: A dictionary mapping header names to their values.
-              Keys and values are stripped of leading/trailing whitespace.
-              Invalid header lines are ignored with a warning logged.
     """
     headers = {}
-    try:
-        for header in headers_str.split("\r\n"):
+    for header in header_lines:
+        if not header:
+            continue
+        try:
             key, value = header.split(": ", 1)
             headers[key.strip()] = value.strip()
-    except ValueError:
-        logger.warning(f"Invalid header line: {header}, ignoring header")
+        except ValueError:
+            logger.warning(f"Invalid header line: {header}, ignoring header")
 
     return headers
 

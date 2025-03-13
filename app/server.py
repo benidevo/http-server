@@ -122,12 +122,11 @@ class HttpServer(Server):
             )
             http_connection.send_response(response.serialize())
             return
+        log.info(f"Routing request to {request.__dict__}")
 
         handler = self.router.routes[request.path]
         response = handler(request)
         http_connection.send_response(response.serialize())
-
-
 
 
     def __enter__(self):

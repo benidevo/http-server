@@ -6,7 +6,7 @@ from app.response import Response
 from app.status import Status
 
 class DefaultHandler:
-    def __call__(self) -> Response:
+    def __call__(self, request: Request) -> Response:
         return Response(status=Status.OK)
 
 Routes = dict[str, Callable]
