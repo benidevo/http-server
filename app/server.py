@@ -4,6 +4,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional
 
+from app.request import Request
+from app.response import Response
+from app.router import Router
+from app.status import Status
+
 log = logging.getLogger(__name__)
 
 
@@ -71,24 +76,10 @@ class HttpConnection:
     connection: socket.socket
     address: str
 
-    def send_response(self, response: str):
+    def send_response(self, response: str) -> None:
         self.connection.sendall(response.encode("utf-8"))
         self.connection.close()
 
-
-@dataclass
-class HttpResponse:
-    connection: HttpConnection
-    status_line: str
-    headers: Optional[str] = ""
-    body: Optional[str] = ""
-
-    def send(self):
-        response = f"{self.status_line}\r\n{self.headers}\r\n\r\n{self.body}"
-        try:
-            self.connection.send_response(response)
-        except Exception as e:
-            log.error(f"Error encoding response body: {e}")
 
 
 class HttpServer(Server):
@@ -97,6 +88,7 @@ class HttpServer(Server):
         self.port: int = port
         self.connections: Optional[List[HttpConnection]] = None
         self.socket: Optional[socket.socket] = None
+        self.router = Router()
 
     def run(self):
         log.info(f"Starting server on {self.host}:{self.port}")
@@ -117,18 +109,26 @@ class HttpServer(Server):
         connection, address = self.socket.accept()
         log.info(f"Connection from {address}")
 
+        http_connection = HttpConnection(connection=connection, address=address)
+        self.connections.append(http_connection)
+
         request = connection.recv(1024).decode("utf-8")
         log.info(f"Received request: {request}")
 
-        http_connection = HttpConnection(connection=connection, address=address)
-        self.connections.append(http_connection)
-        response = HttpResponse(
-            connection=http_connection,
-            status_line="HTTP/1.1 200 OK",
-            headers="Content-Type: text/html",
-            body="<html><body>Hello, World!</body></html>",
-        )
-        response.send()
+        request = Request.deserialize(request)
+        if request.path not in self.router.routes:
+            response = Response(
+                status=Status.NOT_FOUND,
+            )
+            http_connection.send_response(response.serialize())
+            return
+
+        handler = self.router.routes[request.path]
+        response = handler(request)
+        http_connection.send_response(response.serialize())
+
+
+
 
     def __enter__(self):
         self.run()
