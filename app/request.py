@@ -1,7 +1,13 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from app.methods import HttpMethod
 from app.utils import format_headers, parse_headers
+
+
+@dataclass
+class RequestMetadata:
+    path_params: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -11,6 +17,7 @@ class Request:
     path: str
     headers: dict[str, str]
     body: str = field(default="")
+    metadata: RequestMetadata = field(default_factory=RequestMetadata)
 
     @classmethod
     def deserialize(cls, request_str: str) -> "Request":

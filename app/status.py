@@ -10,8 +10,11 @@ class Status(StrEnum):
     MULTIPLE_CHOICES = "300 Multiple Choices"
     MOVED_PERMANENTLY = "301 Moved Permanently"
     FOUND = "302 Found"
+
     NOT_FOUND = "404 Not Found"
-    INTERNAL_SERVER_ERROR = "500 Internal Server Error"
-    NOT_IMPLEMENTED = "501 Not Implemented"
     BAD_REQUEST = "400 Bad Request"
     FORBIDDEN = "403 Forbidden"
+    METHOD_NOT_ALLOWED = "405 Method Not Allowed"
+
+    INTERNAL_SERVER_ERROR = "500 Internal Server Error"
+    NOT_IMPLEMENTED = "501 Not Implemented"
