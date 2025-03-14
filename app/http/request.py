@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.methods import HttpMethod
+from app.http.methods import HttpMethod
 from app.utils import format_headers, parse_headers
 
 

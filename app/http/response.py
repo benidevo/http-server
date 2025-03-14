@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from app.status import Status
+from app.http.status import Status
 from app.utils import format_headers
 
 default_headers = {

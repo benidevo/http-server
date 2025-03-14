@@ -2,10 +2,11 @@ import logging
 import socket
 from dataclasses import dataclass
 
-from app.request import Request
-from app.response import Response
+from app.configs import settings
+from app.http.request import Request
+from app.http.response import Response
+from app.http.status import Status
 from app.router import Router
-from app.status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class HttpConnection:
 
 
 class HttpServer:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str = settings.host, port: int = settings.port) -> None:
         self.host: str = host
         self.port: int = port
         self.connections: list[HttpConnection] = []

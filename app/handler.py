@@ -2,9 +2,9 @@ import logging
 from collections import namedtuple
 from typing import Callable
 
-from app.request import Request
-from app.response import Response
-from app.status import Status
+from app.http.request import Request
+from app.http.response import Response
+from app.http.status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,6 @@ RouteParams = namedtuple("RouteParams", ["path_params", "query_params"])
 
 
 class BaseHandler:
-    _route: str = ""
     _METHODS_MAP = {
         "GET": "get",
         "POST": "post",

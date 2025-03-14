@@ -1,13 +1,8 @@
-from app.configs import settings
-from app.demo.handlers import EchoHandler, UserAgentHandler
-from app.server import HttpServer
+from app.demo.main import run_demo
 
 
 def main() -> None:
-    server = HttpServer(settings.host, settings.port)
-    server.router.add_route("/echo/{str}", EchoHandler)
-    server.router.add_route("/user-agent", UserAgentHandler)
-    server.run()
+    run_demo()
 
 
 if __name__ == "__main__":
