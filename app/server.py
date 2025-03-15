@@ -1,5 +1,6 @@
 import logging
 import socket
+import threading
 from dataclasses import dataclass
 
 from app.configs import settings
@@ -18,72 +19,146 @@ class HttpConnection:
 
     def send_response(self, response_str: str) -> None:
         self.connection.sendall(response_str.encode("utf-8"))
-        self.connection.close()
+
+    def set_timeout(self, timeout: int) -> None:
+        self.connection.settimeout(timeout)
+
+    def close(self) -> None:
+        try:
+            self.connection.close()
+        except Exception:
+            pass
 
 
 class HttpServer:
+    _THREAD_CLEANUP_INTERVAL: int = 5
+    _THREAD_TIMEOUT: int = 1
+    _CONNECTION_TIMEOUT: int = 30
+
     def __init__(self, host: str = settings.host, port: int = settings.port) -> None:
         self.host: str = host
         self.port: int = port
-        self.connections: list[HttpConnection] = []
         self.socket = socket.create_server((self.host, self.port), reuse_port=True)
         self.router = Router()
+        self.threads: list[threading.Thread] = []
+        self.running: bool = False
 
     def run(self) -> None:
         """
-        Starts the server and begins listening for incoming connections.
+        Run the HTTP server.
 
-        This method initializes the server and enters the main server loop.
-        It continuously listens for and handles incoming client requests until
-        interrupted. The server can be stopped by sending a KeyboardInterrupt
-        (Ctrl+C).
+        Starts the server on the configured host and port, accepting incoming connections
+        and handling them in separate threads. Also starts a cleanup thread to remove
+        completed connection threads.
 
-        The method logs when the server starts, any errors that occur while
-        handling requests, and when the server is shutting down.
-
-        Raises:
-            KeyboardInterrupt: When the server is manually stopped
-            Exception: If an error occurs while handling a request
+        The server runs until shutdown() is called or a KeyboardInterrupt is received.
+        Each connection is handled in its own thread with configurable timeouts.
         """
         logger.info(f"Starting server on {self.host}:{self.port}")
 
-        while True:
-            try:
-                self.handle_request()
-            except KeyboardInterrupt:
-                logger.info("Shutting down server...")
-                break
-            except Exception as e:
-                logger.error(f"Error handling request: {e}")
+        self.running = True
+        cleanup_thread = threading.Thread(target=self._cleanup_threads, daemon=True)
+        cleanup_thread.start()
 
-    def handle_request(self) -> None:
-        connection, address = self.socket.accept()
-        logger.info(f"Connection from {address}")
+        try:
+            while self.running:
+                try:
+                    connection, address = self.socket.accept()
+                    logger.info(f"Connection from {address}")
 
+                    thread = threading.Thread(
+                        target=self._handle_connection,
+                        args=(connection, address),
+                        daemon=True,
+                    )
+                    thread.start()
+                    self.threads.append(thread)
+
+                except (socket.error, socket.timeout) as e:
+                    if self.running:
+                        logger.error("Socket error: {e}")
+
+        except KeyboardInterrupt:
+            self.shutdown()
+
+    def _handle_connection(self, connection: socket.socket, address: str) -> None:
         http_connection = HttpConnection(connection=connection, address=address)
-        self.connections.append(http_connection)
+        try:
+            http_connection.set_timeout(self._CONNECTION_TIMEOUT)
+            keep_alive = True
 
-        request_str = connection.recv(1024).decode("utf-8")
-        logger.info(f"Received request: {request_str}")
+            while keep_alive and self.running:
+                try:
+                    request_data = b""
+                    while True:
+                        chunk = connection.recv(4096)
+                        if not chunk:
+                            break
+                        request_data += chunk
 
-        request: Request = Request.deserialize(request_str)
-        handler, path_params = self.router.match_route(request.path)
+                        if b"\r\n\r\n" in request_data:
+                            break
 
-        if handler is None:
-            response = Response(status=Status.NOT_FOUND)
-            http_connection.send_response(response.serialize())
-            return
+                    if not request_data:
+                        break
 
-        logger.debug(f"Routing request to {request.path} with params {path_params}")
+                    request_str = request_data.decode("utf-8")
+                    logger.debug(f"Received request: {request_str}")
 
-        request.metadata.path_params.update(path_params)
+                    request: Request = Request.deserialize(request_str)
+                    handler, path_params = self.router.match_route(request.path)
 
-        response = handler(request)
-        http_connection.send_response(response.serialize())
+                    if handler is None:
+                        response = Response(status=Status.NOT_FOUND)
+                    else:
+                        request.metadata.path_params.update(path_params)
+                        response = handler(request)
+
+                    connection_header = request.headers.get("Connection", "").lower()
+                    keep_alive = connection_header == "keep-alive" and self.running
+
+                    if keep_alive:
+                        response.headers["Connection"] = "keep-alive"
+                    else:
+                        response.headers["Connection"] = "close"
+
+                    http_connection.send_response(response.serialize())
+
+                except socket.timeout:
+                    logger.info(f"Connection from {address} timed out")
+                    keep_alive = False
+
+                except Exception as e:
+                    logger.error(f"Error handling request: {e}")
+                    http_connection.send_response(
+                        Response(status=Status.INTERNAL_SERVER_ERROR).serialize()
+                    )
+
+        finally:
+            http_connection.close()
+            logger.info(f"Connection from {address} closed")
 
     def shutdown(self) -> None:
+        """
+        Gracefully shuts down the server.
+
+        Sets the running flag to False, closes the server socket, and waits for all client
+        connection threads to complete. Times out thread joins after self._THREAD_TIMEOUT seconds.
+        """
         logger.info("Shutting down server...")
-        for connection in self.connections:
-            connection.connection.close()
-        self.socket.close()
+
+        self.running = False
+        try:
+            self.socket.close()
+        except Exception:
+            pass
+
+        for thread in self.threads:
+            thread.join(timeout=self._THREAD_TIMEOUT)
         logger.info("Server stopped")
+
+    def _cleanup_threads(self) -> None:
+        while self.running:
+            self.threads = [thread for thread in self.threads if thread.is_alive()]
+
+            threading.Event().wait(self._THREAD_CLEANUP_INTERVAL)
