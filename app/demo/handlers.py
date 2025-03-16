@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from app.handler import BaseHandler
 from app.http.request import Request
@@ -20,3 +21,20 @@ class UserAgentHandler(BaseHandler):
             "User-Agent", request.headers.get("user-agent", "Unknown")
         )
         return Response(body=user_agent)
+
+
+class FileHandler(BaseHandler):
+    def get(self, request: Request) -> Response:
+        file_path = request.metadata.path_params.get("file_path", "")
+        if not file_path:
+            return Response(status=Status.BAD_REQUEST)
+        directory = sys.argv[2]
+
+        try:
+            with open(f"{directory}/{file_path}", "r") as file:
+                return Response(
+                    body=file.read(),
+                    headers={"Content-Type": "application/octet-stream"},
+                )
+        except FileNotFoundError:
+            return Response(status=Status.NOT_FOUND)
