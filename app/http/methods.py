@@ -8,3 +8,4 @@ class HttpMethod(StrEnum):
     DELETE = "DELETE"
     OPTIONS = "OPTIONS"
     HEAD = "HEAD"
+    PATCH = "PATCH"

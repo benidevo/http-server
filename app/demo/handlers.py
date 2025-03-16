@@ -38,3 +38,12 @@ class FileHandler(BaseHandler):
                 )
         except FileNotFoundError:
             return Response(status=Status.NOT_FOUND)
+
+    def post(self, request: Request) -> Response:
+        file_path = request.metadata.path_params.get("file_path", "")
+        if not file_path:
+            return Response(status=Status.BAD_REQUEST)
+        directory = sys.argv[2]
+        with open(f"{directory}/{file_path}", "w") as file:
+            file.write(request.body)
+        return Response(status=Status.CREATED)

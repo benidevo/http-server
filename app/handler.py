@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 from typing import Callable
 
+from app.http.methods import HttpMethod
 from app.http.request import Request
 from app.http.response import Response
 from app.http.status import Status
@@ -13,10 +14,11 @@ RouteParams = namedtuple("RouteParams", ["path_params", "query_params"])
 
 class BaseHandler:
     _METHODS_MAP = {
-        "GET": "get",
-        "POST": "post",
-        "PUT": "put",
-        "DELETE": "delete",
+        HttpMethod.GET: "get",
+        HttpMethod.POST: "post",
+        HttpMethod.PUT: "put",
+        HttpMethod.PATCH: "patch",
+        HttpMethod.DELETE: "delete",
     }
 
     def __call__(self, request: Request) -> Response:
