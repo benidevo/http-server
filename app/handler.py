@@ -1,5 +1,7 @@
+import gzip
 import logging
 from collections import namedtuple
+from enum import StrEnum
 from typing import Callable
 
 from app.http.methods import HttpMethod
@@ -12,6 +14,13 @@ logger = logging.getLogger(__name__)
 RouteParams = namedtuple("RouteParams", ["path_params", "query_params"])
 
 
+class CompressionType(StrEnum):
+    GZIP = "gzip"
+
+
+CompressionTypes = (CompressionType.GZIP,)
+
+
 class BaseHandler:
     _METHODS_MAP = {
         HttpMethod.GET: "get",
@@ -22,11 +31,32 @@ class BaseHandler:
     }
 
     def __call__(self, request: Request) -> Response:
+        compression_type = request.headers.get("Accept-Encoding", "").lower()
+
         method = self._METHODS_MAP[request.method]
         method_func: Callable[[Request], Response] | None = getattr(self, method, None)
         if method_func is None:
             return Response(status=Status.METHOD_NOT_ALLOWED)
-        return method_func(request)
+        response = method_func(request)
+
+        compression_is_permitted = (
+            compression_type and compression_type in CompressionTypes
+        )
+        if compression_is_permitted:
+            response.headers["Content-Encoding"] = compression_type
+        if response.body and compression_is_permitted:
+            response.body = self._compress_response_body(
+                response.body, CompressionType(compression_type)  # type: ignore
+            )
+
+        return response
+
+    def _compress_response_body(
+        self, body: str, compression_type: CompressionType
+    ) -> str | bytes:
+        if body and compression_type == CompressionType.GZIP:
+            return gzip.compress(body.encode())
+        return body
 
     def get(self, request: Request) -> Response:
         """Handles GET requests.

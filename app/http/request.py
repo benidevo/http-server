@@ -17,7 +17,7 @@ class Request:
     path: str
     headers: dict[str, str]
     body: str = field(default="")
-    metadata: RequestMetadata = field(default_factory=RequestMetadata)
+    metadata: RequestMetadata = field(default_factory=lambda: RequestMetadata())
 
     @classmethod
     def deserialize(cls, request_str: str) -> "Request":
