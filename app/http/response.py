@@ -15,7 +15,8 @@ class Response:
     headers: dict = field(default_factory=lambda: default_headers.copy())
     body: str | bytes = field(default="")
 
-    def serialize(self) -> str:
-        self.headers["Content-Length"] = len(self.body)
+    def serialize(self) -> bytes:
+        body_bytes = self.body if isinstance(self.body, bytes) else self.body.encode()
+        self.headers["Content-Length"] = len(body_bytes)
         headers = format_headers(self.headers)
-        return f"{self.version} {self.status}\r\n{headers}\r\n\r\n{self.body}"  # type: ignore
+        return f"{self.version} {self.status}\r\n{headers}\r\n\r\n".encode() + body_bytes  # type: ignore

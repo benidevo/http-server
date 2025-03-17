@@ -17,8 +17,8 @@ class HttpConnection:
     connection: socket.socket
     address: str
 
-    def send_response(self, response_str: str) -> None:
-        self.connection.sendall(response_str.encode("utf-8"))
+    def send_response(self, response_bytes: bytes) -> None:
+        self.connection.sendall(response_bytes)
 
     def set_timeout(self, timeout: int) -> None:
         self.connection.settimeout(timeout)
