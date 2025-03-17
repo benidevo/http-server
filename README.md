@@ -1,26 +1,41 @@
 # Python HTTP Server
 
-A lightweight, modular HTTP/1.1 server implementation in Python. This project implements a basic HTTP server from scratch, following HTTP/1.1 specifications to handle client requests.
+A lightweight, modular HTTP/1.1 server implementation in Python. This project implements a complete HTTP server from scratch, following HTTP/1.1 specifications with a focus on clean architecture and extensibility.
 
-> **Note**: This project is for educational purposes only and not intended for production use. It is currently a work in progress as features are being implemented incrementally.
+> **Note**: This project is for educational purposes only and not intended for production use.
 
 ## Features
 
-- Complete HTTP/1.1 request and response handling
-- Modular architecture with clean separation of concerns
-- Type-safe implementation with comprehensive type annotations
-- Configurable server settings
-- Extensible routing system
-- Support for standard HTTP methods (GET, POST, PUT, DELETE, etc.)
+- **Complete HTTP/1.1 Implementation**: Full request and response handling with proper protocol compliance
+- **Modular Architecture**: Clean separation of concerns through well-defined components
+- **Type-Safe Implementation**: Comprehensive type annotations and static type checking
+- **Extensible Routing System**: Support for path parameters and pattern matching
+- **Handler-Based Endpoints**: Class-based handlers with method-specific processing
+- **Content Compression**: Built-in support for gzip response compression
+- **Connection Management**: Support for keep-alive connections and proper thread handling
+- **Configurable Settings**: Easily customizable server behavior
 
+## Project Structure
 
-### Key Components
-
-- **Server**: Core HTTP server implementation with connection handling
-- **Router**: Request routing to appropriate handlers
-- **Request/Response**: HTTP message parsing and serialization
-- **Methods/Status**: Enums for HTTP methods and status codes
-- **Configs**: Server configuration management
+```
+├── app/                       # Core server implementation
+│   ├── configs/               # Server configuration
+│   ├── http/                  # HTTP protocol implementation
+│   │   ├── methods.py         # HTTP method enumerations
+│   │   ├── request.py         # Request parsing and representation
+│   │   ├── response.py        # Response generation and serialization
+│   │   └── status.py          # HTTP status codes
+│   ├── handler.py             # Base request handler
+│   ├── router.py              # URL routing and pattern matching
+│   ├── server.py              # Server socket and connection handling
+│   └── utils.py               # Utility functions
+├── demo/                      # Example implementation
+│   ├── handlers.py            # Example route handlers
+│   └── main.py                # Demo server setup
+├── Pipfile                    # Dependencies
+├── Makefile                   # Build and run tasks
+└── run.sh                     # Start script
+```
 
 ## Getting Started
 
@@ -33,7 +48,7 @@ A lightweight, modular HTTP/1.1 server implementation in Python. This project im
 
 1. Clone the repository:
    ```
-   git clone https://github.com/benidevo/http-server
+   git clone https://github.com/benidevo/http-server.git
    cd http-server
    ```
 
@@ -63,36 +78,120 @@ make start
 
 The server will start on `localhost:4221` by default (configurable in `app/configs/__init__.py`).
 
-## Development
+## Usage
 
-### Code Formatting and Linting
+### Creating a New Server
 
-The project uses:
-- Black for code formatting
-- isort for import sorting
-- mypy for static type checking
+```python
+from app.server import HttpServer
+from app.handler import BaseHandler
+from app.http.request import Request
+from app.http.response import Response
 
-Run formatting and linting:
+# Create a custom handler
+class HelloHandler(BaseHandler):
+    def get(self, request: Request) -> Response:
+        return Response(body="Hello, World!")
+
+# Initialize the server
+server = HttpServer(host="localhost", port=8080)
+
+# Register routes
+server.router.add_route("/", HelloHandler)
+
+# Start the server
+server.run()
+```
+
+### Path Parameters
+
+The router supports path parameters with the `{param}` syntax:
+
+```python
+class UserHandler(BaseHandler):
+    def get(self, request: Request) -> Response:
+        user_id = request.metadata.path_params.get("id")
+        return Response(body=f"User ID: {user_id}")
+
+# Register with parameter
+server.router.add_route("/users/{id}", UserHandler)
+```
+
+### HTTP Methods
+
+The `BaseHandler` class provides default implementations for common HTTP methods:
+
+```python
+class ResourceHandler(BaseHandler):
+    def get(self, request: Request) -> Response:
+        return Response(body="GET request")
+
+    def post(self, request: Request) -> Response:
+        return Response(body="POST request")
+
+    def put(self, request: Request) -> Response:
+        return Response(body="PUT request")
+
+    def delete(self, request: Request) -> Response:
+        return Response(body="DELETE request")
+```
+
+## Design Decisions
+
+### Handler-Based Architecture
+
+The server uses a class-based handler system inspired by frameworks like Flask and Django. This design allows for:
+
+- Method-specific request handling with a clean API
+- Shared logic through class inheritance
+- Intuitive mapping of HTTP methods to handler methods
+
+### Thread Per Connection
+
+Each client connection is handled in a separate thread, allowing for:
+
+- Concurrent request processing
+- Isolation between client connections
+- Simple implementation with Python's threading library
+
+### Strong Type Safety
+
+The implementation uses:
+
+- Type annotations throughout the codebase
+- Strict mypy configuration for static type checking
+- Dataclasses for clean, typed data structures
+
+### Response Compression
+
+The server implements automatic gzip compression when clients indicate support, improving:
+
+- Response bandwidth efficiency
+- Compatibility with modern clients
+- Performance for text-heavy responses
+
+## Demo Application
+
+The included demo application (`demo/main.py`) showcases:
+
+- Basic routing
+- Handler implementation
+- Path parameter extraction
+- JSON request/response handling
+- A simple RESTful TODO API
+
+To test the demo endpoints:
 
 ```
-make format  # Format code
-make lint    # Format and type-check code
+# Get server info
+curl http://localhost:4221/info
+
+# Create a TODO item
+curl -X POST http://localhost:4221/todos -d '{"title": "New task", "completed": false}'
+
+# Get all TODOs
+curl http://localhost:4221/todos
+
+# Get a specific TODO
+curl http://localhost:4221/todos/1
 ```
-
-
-## Architecture
-
-### Request Flow
-
-1. Client sends HTTP request to server
-2. Server parses the request into a `Request` object
-3. Router matches the request path to a handler
-4. Handler processes the request and returns a `Response`
-5. Server serializes and sends the response back to the client
-
-### Main Components
-
-- **HttpServer**: Manages socket connections and request handling
-- **Router**: Maps URL paths to handler functions
-- **Request/Response**: Data models for HTTP messages
-- **HttpMethod/Status**: Enumerations for HTTP protocol values
