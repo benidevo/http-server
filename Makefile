@@ -1,9 +1,6 @@
 start:
 	sh run.sh
 
-test:
-	codecrafters test
-
 format:
 	pipenv run isort ./app
 	pipenv run black ./app
@@ -14,4 +11,4 @@ lint: format
 install-dev:
 	pipenv install --dev
 
-.PHONY: start test format lint install-dev
+.PHONY: start format lint install-dev

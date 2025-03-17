@@ -54,11 +54,11 @@ class HttpServer:
         The server runs until shutdown() is called or a KeyboardInterrupt is received.
         Each connection is handled in its own thread with configurable timeouts.
         """
-        logger.info(f"Starting server on {self.host}:{self.port}")
-
         self.running = True
         cleanup_thread = threading.Thread(target=self._cleanup_threads, daemon=True)
         cleanup_thread.start()
+        logger.info(f"Server started on http://{self.host}:{self.port}")
+        logger.info("Press Ctrl+C to stop")
 
         try:
             while self.running:
