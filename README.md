@@ -15,28 +15,6 @@ A lightweight, modular HTTP/1.1 server implementation in Python. This project im
 - **Connection Management**: Support for keep-alive connections and proper thread handling
 - **Configurable Settings**: Easily customizable server behavior
 
-## Project Structure
-
-```
-├── app/                       # Core server implementation
-│   ├── configs/               # Server configuration
-│   ├── http/                  # HTTP protocol implementation
-│   │   ├── methods.py         # HTTP method enumerations
-│   │   ├── request.py         # Request parsing and representation
-│   │   ├── response.py        # Response generation and serialization
-│   │   └── status.py          # HTTP status codes
-│   ├── handler.py             # Base request handler
-│   ├── router.py              # URL routing and pattern matching
-│   ├── server.py              # Server socket and connection handling
-│   └── utils.py               # Utility functions
-├── demo/                      # Example implementation
-│   ├── handlers.py            # Example route handlers
-│   └── main.py                # Demo server setup
-├── Pipfile                    # Dependencies
-├── Makefile                   # Build and run tasks
-└── run.sh                     # Start script
-```
-
 ## Getting Started
 
 ### Prerequisites
@@ -47,17 +25,20 @@ A lightweight, modular HTTP/1.1 server implementation in Python. This project im
 ### Installation
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/benidevo/http-server.git
    cd http-server
    ```
 
 2. Install dependencies:
+
    ```
    pipenv install
    ```
 
 3. Install development dependencies (optional):
+
    ```
    pipenv install --dev
    ```
