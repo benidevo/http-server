@@ -32,6 +32,8 @@ class BaseHandler:
 
     def __call__(self, request: Request) -> Response:
         compression_type = request.headers.get("Accept-Encoding", "").lower()
+        compression_type_list = compression_type.split(",")
+        compression_type_list = [_type.strip() for _type in compression_type_list]
 
         method = self._METHODS_MAP[request.method]
         method_func: Callable[[Request], Response] | None = getattr(self, method, None)
@@ -40,13 +42,13 @@ class BaseHandler:
         response = method_func(request)
 
         compression_is_permitted = (
-            compression_type and compression_type in CompressionTypes
+            compression_type and CompressionType.GZIP.value in compression_type_list
         )
         if compression_is_permitted:
-            response.headers["Content-Encoding"] = compression_type
+            response.headers["Content-Encoding"] = CompressionType.GZIP
         if response.body and compression_is_permitted:
             response.body = self._compress_response_body(
-                response.body, CompressionType(compression_type)  # type: ignore
+                response.body, CompressionType.GZIP  # type: ignore
             )
 
         return response
